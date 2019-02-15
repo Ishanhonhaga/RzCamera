@@ -1,14 +1,13 @@
 package io.roadzen.rzcameraandroid.capture
 
-import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
 import android.os.Environment
-import android.os.Handler
 import android.util.Log
 import android.view.View
 import android.view.ViewGroup
 import android.widget.ImageButton
 import android.widget.ImageView
+import androidx.appcompat.app.AppCompatActivity
 import androidx.lifecycle.Observer
 import com.otaliastudios.cameraview.*
 import io.roadzen.rzcameraandroid.R
@@ -20,27 +19,23 @@ internal class CaptureActivity : AppCompatActivity(), FileDirectoryProvider {
     private val viewModel: CaptureViewModel by lazy { getViewModel {
         CaptureViewModel(initCaptureViewState(), this)
     } }
-    private lateinit var uiHandler: Handler
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_capture)
 
-        viewModel.onEvent(CaptureEvent.ScreenLoadEvent)
-        setUpViews()
-
         viewModel.captureViewEffect.observe(this, Observer { handleViewEffect(it) })
         viewModel.captureViewState.observe(this, Observer { render(it) })
+
+        viewModel.onEvent(CaptureEvent.ScreenLoadEvent)
+        setUpViews()
     }
 
     private fun setUpViews() {
         window.decorView.setOnSystemUiVisibilityChangeListener { visibility ->
             if (visibility and View.SYSTEM_UI_FLAG_FULLSCREEN == 0) {
                 viewModel.onEvent(CaptureEvent.SystemUiVisibleEvent)
-//                uiHandler.postDelayed({
-//                    hideSystemUI()
-//                }, 1000)
-            } else {}
+            }
         }
 
         cameraView.setLifecycleOwner(this)
@@ -58,7 +53,7 @@ internal class CaptureActivity : AppCompatActivity(), FileDirectoryProvider {
             }
         })
 
-        aspectRatioButton?.setOnClickListener { viewModel.onEvent(CaptureEvent.ChangeAspectRatioEvent) }
+        fullscreenButton?.setOnClickListener { viewModel.onEvent(CaptureEvent.ChangeAspectRatioEvent) }
         flashButton?.setOnClickListener { viewModel.onEvent(CaptureEvent.ToggleFlashEvent) }
         previewImage?.setOnClickListener { viewModel.onEvent(CaptureEvent.NavigateToPreviewEvent) }
         overlayImage?.setOnClickListener { viewModel.onEvent(CaptureEvent.EnlargeMinimiseOverlayEvent) }
@@ -95,6 +90,7 @@ internal class CaptureActivity : AppCompatActivity(), FileDirectoryProvider {
             overlayImage?.visibility = View.GONE
             enlargedOverlayImage?.visibility = View.GONE
         } else {
+            overlayImage?.visibility = View.VISIBLE
             if (viewState.overlayImageUri?.isNotEmpty() == true) {
                 GlideApp.with(this).load(viewState.overlayImageUri).into(overlayImage as ImageButton)
                 GlideApp.with(this).load(viewState.overlayImageUri).into(enlargedOverlayImage as ImageView)
@@ -107,6 +103,7 @@ internal class CaptureActivity : AppCompatActivity(), FileDirectoryProvider {
 
         // PREVIEW IMAGE
         if (viewState.previewImageUri?.isNotEmpty() == true) {
+            previewImage?.visibility = View.VISIBLE
             GlideApp.with(this).load(viewState.previewImageUri).into(previewImage as ImageButton)
         }
 
@@ -136,12 +133,14 @@ internal class CaptureActivity : AppCompatActivity(), FileDirectoryProvider {
             params.height = ViewGroup.LayoutParams.MATCH_PARENT
             params.width = ViewGroup.LayoutParams.MATCH_PARENT
             cameraView.layoutParams = params
+            fullscreenButton?.setImageResource(R.drawable.ic_fullscreen_exit)
         } else {
             showSystemUI()
             val params = cameraView.layoutParams
             params.height = ViewGroup.LayoutParams.WRAP_CONTENT
             params.width = ViewGroup.LayoutParams.WRAP_CONTENT
             cameraView.layoutParams = params
+            fullscreenButton?.setImageResource(R.drawable.ic_fullscreen)
         }
     }
 
@@ -156,12 +155,12 @@ internal class CaptureActivity : AppCompatActivity(), FileDirectoryProvider {
                 or View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION
                 or View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN
                 // Hide the nav bar and status bar
-                or View.SYSTEM_UI_FLAG_FULLSCREEN)
+                or View.SYSTEM_UI_FLAG_FULLSCREEN
+                or View.SYSTEM_UI_FLAG_HIDE_NAVIGATION)
     }
 
     private fun showSystemUI() {
-        window.decorView.systemUiVisibility = (View.SYSTEM_UI_FLAG_VISIBLE
-                or View.SYSTEM_UI_FLAG_HIDE_NAVIGATION)
+        window.decorView.systemUiVisibility = (View.SYSTEM_UI_FLAG_VISIBLE)
     }
 
     override fun getPrivateDirectory(): String {
@@ -170,5 +169,8 @@ internal class CaptureActivity : AppCompatActivity(), FileDirectoryProvider {
 
     override fun getPublicDirectory(): String? {
         return getExternalFilesDir(Environment.DIRECTORY_PICTURES)?.absolutePath
+        // TODO: Change to -
+        // Environment.getExternalStoragePublicDirectory(
+        //            Environment.DIRECTORY_PICTURES)
     }
 }

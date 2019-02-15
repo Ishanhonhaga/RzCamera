@@ -3,23 +3,23 @@ package io.roadzen.rzcameraandroid.capture
 import android.util.Log
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
-import androidx.lifecycle.ViewModel
 import com.otaliastudios.cameraview.PictureResult
-import io.roadzen.rzcameraandroid.RzContext.fileExtension
-import io.roadzen.rzcameraandroid.RzContext.filePrefix
-import io.roadzen.rzcameraandroid.RzContext.fileSuffix
+import io.roadzen.rzcameraandroid.RzContext.fileName
+import io.roadzen.rzcameraandroid.RzContext.imageFileExtension
 import io.roadzen.rzcameraandroid.RzContext.startFullScreenPreview
 import io.roadzen.rzcameraandroid.RzContext.useInternalStorage
+import io.roadzen.rzcameraandroid.base.BaseViewModel
 import io.roadzen.rzcameraandroid.util.*
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 import java.io.File
-import java.io.FileNotFoundException
-import java.lang.RuntimeException
+import java.util.*
 import java.util.concurrent.atomic.AtomicInteger
 
 internal class CaptureViewModel(
     captureViewState: CaptureViewState,
     private val fileDirectoryProvider: FileDirectoryProvider
-) : ViewModel() {
+) : BaseViewModel() {
 
     private val capturedImages = mutableListOf<String>()
     private var imageCounter: AtomicInteger = AtomicInteger(0)
@@ -57,10 +57,9 @@ internal class CaptureViewModel(
     }
 
     private fun screenLoad() {
-        if (isPreviewExpanded) {
-            // TODO
-        }
         checkAndHideSystemUI()
+        captureViewEffectLD.value = CaptureViewEffect.ExpandCameraPreview(isPreviewExpanded)
+        captureViewStateLD.postValue(currentViewState)
     }
 
     private fun cameraError() {
@@ -69,7 +68,10 @@ internal class CaptureViewModel(
 
     private fun checkAndHideSystemUI() {
         if (isPreviewExpanded) {
-            captureViewEffectLD.value = CaptureViewEffect.MakeImmersiveEffect
+            launch {
+                delay(1000L)
+                captureViewEffectLD.value = CaptureViewEffect.MakeImmersiveEffect
+            }
         }
     }
 
@@ -92,32 +94,33 @@ internal class CaptureViewModel(
     }
 
     private fun imageCaptured(pictureResult: PictureResult) {
-        val fileName = "${filePrefix}_${imageCounter.getAndIncrement()}_${fileSuffix ?: ""}.$fileExtension"
+        val fileName = "${fileName}_${Date().time}_${imageCounter.getAndIncrement()}.$imageFileExtension"
 
         try {
-            val file = if (useInternalStorage) {
-                File(fileDirectoryProvider.getPrivateDirectory(), fileName)
-
-            } else if (isExternalStorageWritable()) {
+            val file = if (!useInternalStorage && isExternalStorageWritable()) {
                 val externalDirectory = fileDirectoryProvider.getPublicDirectory()
-                if (externalDirectory == null) throw FileNotFoundException("Unable to get public directory")
-                else File(externalDirectory, fileName)
+                File(externalDirectory, fileName)
 
             } else {
-                throw FileNotFoundException("Unable to write to external storage")
+                File(fileDirectoryProvider.getPrivateDirectory(), fileName)
+
             }
 
+            if (file.exists()) Log.d(LOG_TAG, "File exists")
+            if (!file.delete()) Log.d(LOG_TAG, "File delete nhi ho gyi")
+
             pictureResult.toFile(file) { savedFile ->
-                savedFile?.let {
-                    val uriPath = it.toURI()?.path!!
+                currentViewState = if (savedFile != null) {
+                    val uriPath = savedFile.toURI()?.path!!
                     capturedImages.add(uriPath)
-                    currentViewState = currentViewState.copy(previewImageUri = uriPath)
+                    currentViewState.copy(previewImageUri = uriPath)
+                } else {
+                    currentViewState.copy(error = ERROR_SAVE_FILE)
                 }
-                    ?: throw RuntimeException("Lib unable to save image file to disk")
             }
         } catch (e: Exception) {
             Log.e(LOG_TAG, e.localizedMessage)
-            currentViewState = currentViewState.copy(error = ERROR_SAVE_FILE)
+
         }
     }
 }
