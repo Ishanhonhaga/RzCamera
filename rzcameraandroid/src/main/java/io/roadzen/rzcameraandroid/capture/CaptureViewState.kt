@@ -5,23 +5,24 @@ import io.roadzen.rzcameraandroid.RzContext.defaultFlashMode
 import io.roadzen.rzcameraandroid.RzContext.overlayImageResId
 import io.roadzen.rzcameraandroid.RzContext.overlayImageUri
 import io.roadzen.rzcameraandroid.RzContext.overlayLabel
-import io.roadzen.rzcameraandroid.RzContext.prevCapturedImageUriList
+import io.roadzen.rzcameraandroid.util.ImageCache
 
 enum class FlashMode { ON, OFF, AUTO }
 
 data class CaptureViewState(
-    val flashMode: FlashMode = FlashMode.AUTO,
-    val overlayImageUri: String? = null,
-    val overlayImageResId: Int? = null,
-    val previewImageUri: String? = null,
-    val overlayEnlarged: Boolean = false,
-    val overlayLabel: String? = null,
-    val error: String? = null
+    val flashMode: FlashMode,
+    val overlayImageUri: String?,
+    val overlayImageResId: Int?,
+    val capturedImages: List<String>,
+    val overlayEnlarged: Boolean,
+    val overlayLabel: String?,
+    val error: String?
 )
 
 sealed class CaptureViewEffect {
     object MakeImmersiveEffect : CaptureViewEffect()
-    class ExpandCameraPreview(val expand: Boolean) : CaptureViewEffect()
+    data class ExpandCameraPreviewEffect(val expand: Boolean) : CaptureViewEffect()
+    object NavigateToImagePreviewEffect : CaptureViewEffect()
 }
 
 sealed class CaptureEvent {
@@ -40,7 +41,7 @@ fun initCaptureViewState(): CaptureViewState {
         flashMode = defaultFlashMode,
         overlayImageUri = overlayImageUri,
         overlayImageResId = overlayImageResId,
-        previewImageUri = prevCapturedImageUriList?.get(0),
+        capturedImages = ImageCache.capturedImageUriList.toList(),
         overlayEnlarged = false,
         overlayLabel = overlayLabel,
         error = null

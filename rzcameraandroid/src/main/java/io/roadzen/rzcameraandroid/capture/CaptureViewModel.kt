@@ -17,11 +17,9 @@ import java.util.*
 import java.util.concurrent.atomic.AtomicInteger
 
 internal class CaptureViewModel(
-    captureViewState: CaptureViewState,
     private val fileDirectoryProvider: FileDirectoryProvider
 ) : BaseViewModel() {
 
-    private val capturedImages = mutableListOf<String>()
     private var imageCounter: AtomicInteger = AtomicInteger(0)
     private var isPreviewExpanded = startFullScreenPreview
 
@@ -32,7 +30,7 @@ internal class CaptureViewModel(
     val captureViewEffect: LiveData<CaptureViewEffect>
         get() = captureViewEffectLD
 
-    private var currentViewState = captureViewState
+    private var currentViewState = initCaptureViewState()
         set(value) {
             field = value
             captureViewStateLD.value = value
@@ -53,13 +51,13 @@ internal class CaptureViewModel(
 
     private fun changeAspectRatio() {
         isPreviewExpanded = !isPreviewExpanded
-        captureViewEffectLD.value = CaptureViewEffect.ExpandCameraPreview(isPreviewExpanded)
+        captureViewEffectLD.value = CaptureViewEffect.ExpandCameraPreviewEffect(isPreviewExpanded)
     }
 
     private fun screenLoad() {
         checkAndHideSystemUI()
-        captureViewEffectLD.value = CaptureViewEffect.ExpandCameraPreview(isPreviewExpanded)
-        captureViewStateLD.postValue(currentViewState)
+        captureViewEffectLD.value = CaptureViewEffect.ExpandCameraPreviewEffect(isPreviewExpanded)
+        currentViewState = currentViewState.copy(capturedImages = ImageCache.capturedImageUriList.toList())
     }
 
     private fun cameraError() {
@@ -76,7 +74,7 @@ internal class CaptureViewModel(
     }
 
     private fun navigateToPreview() {
-        TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
+        captureViewEffectLD.value = CaptureViewEffect.NavigateToImagePreviewEffect
     }
 
     private fun enlargeMinimiseOverlay() {
@@ -103,17 +101,14 @@ internal class CaptureViewModel(
 
             } else {
                 File(fileDirectoryProvider.getPrivateDirectory(), fileName)
-
             }
-
-            if (file.exists()) Log.d(LOG_TAG, "File exists")
-            if (!file.delete()) Log.d(LOG_TAG, "File delete nhi ho gyi")
 
             pictureResult.toFile(file) { savedFile ->
                 currentViewState = if (savedFile != null) {
                     val uriPath = savedFile.toURI()?.path!!
-                    capturedImages.add(uriPath)
-                    currentViewState.copy(previewImageUri = uriPath)
+
+                    ImageCache.capturedImageUriList.add(0, uriPath)
+                    currentViewState.copy(capturedImages = ImageCache.capturedImageUriList.toList())
                 } else {
                     currentViewState.copy(error = ERROR_SAVE_FILE)
                 }

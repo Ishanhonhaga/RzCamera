@@ -1,5 +1,6 @@
 package io.roadzen.rzcameraandroid.capture
 
+import android.content.Intent
 import android.os.Bundle
 import android.os.Environment
 import android.util.Log
@@ -11,14 +12,13 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.lifecycle.Observer
 import com.otaliastudios.cameraview.*
 import io.roadzen.rzcameraandroid.R
+import io.roadzen.rzcameraandroid.imagepreview.ImagePreviewActivity
 import io.roadzen.rzcameraandroid.util.*
 import kotlinx.android.synthetic.main.activity_capture.*
 
 internal class CaptureActivity : AppCompatActivity(), FileDirectoryProvider {
 
-    private val viewModel: CaptureViewModel by lazy { getViewModel {
-        CaptureViewModel(initCaptureViewState(), this)
-    } }
+    private val viewModel: CaptureViewModel by lazy { getViewModel { CaptureViewModel(this) } }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -27,8 +27,12 @@ internal class CaptureActivity : AppCompatActivity(), FileDirectoryProvider {
         viewModel.captureViewEffect.observe(this, Observer { handleViewEffect(it) })
         viewModel.captureViewState.observe(this, Observer { render(it) })
 
-        viewModel.onEvent(CaptureEvent.ScreenLoadEvent)
         setUpViews()
+    }
+
+    override fun onStart() {
+        super.onStart()
+        viewModel.onEvent(CaptureEvent.ScreenLoadEvent)
     }
 
     private fun setUpViews() {
@@ -102,9 +106,9 @@ internal class CaptureActivity : AppCompatActivity(), FileDirectoryProvider {
         }
 
         // PREVIEW IMAGE
-        if (viewState.previewImageUri?.isNotEmpty() == true) {
+        if (viewState.capturedImages.isNotEmpty()) {
             previewImage?.visibility = View.VISIBLE
-            GlideApp.with(this).load(viewState.previewImageUri).into(previewImage as ImageButton)
+            GlideApp.with(this).load(viewState.capturedImages[0]).into(previewImage as ImageButton)
         }
 
         // ENLARGE OVERLAY
@@ -122,8 +126,13 @@ internal class CaptureActivity : AppCompatActivity(), FileDirectoryProvider {
     private fun handleViewEffect(viewEffect: CaptureViewEffect) {
         when (viewEffect) {
             is CaptureViewEffect.MakeImmersiveEffect -> hideSystemUI()
-            is CaptureViewEffect.ExpandCameraPreview -> expandPreview(viewEffect.expand)
+            is CaptureViewEffect.ExpandCameraPreviewEffect -> expandPreview(viewEffect.expand)
+            is CaptureViewEffect.NavigateToImagePreviewEffect -> navigateToImagePreview()
         }
+    }
+
+    private fun navigateToImagePreview() {
+        startActivity(Intent(this, ImagePreviewActivity::class.java))
     }
 
     private fun expandPreview(expand: Boolean) {

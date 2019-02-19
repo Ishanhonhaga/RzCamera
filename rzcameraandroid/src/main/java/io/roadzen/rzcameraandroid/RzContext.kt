@@ -70,11 +70,6 @@ object RzContext {
     var overlayLabel: String? = null
 
     /**
-     * Any previously captured images that should be included in the image preview screen.
-     */
-    var prevCapturedImageUriList: List<String>? = null
-
-    /**
      * Calling activity context
      */
     fun with(context: Context): RzContext {

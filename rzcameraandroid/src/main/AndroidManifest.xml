@@ -1,16 +1,18 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
-          package="io.roadzen.rzcameraandroid">
+    package="io.roadzen.rzcameraandroid">
 
     <uses-permission android:name="android.permission.RECORD_AUDIO" />
     <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />
 
     <application>
+        <activity android:name=".imagepreview.ImagePreviewActivity"
+            android:screenOrientation="landscape"
+            android:theme="@style/Theme.AppCompat.NoActionBar.Base"/>
         <activity
-                android:name=".capture.CaptureActivity"
-                android:screenOrientation="landscape"
-                android:theme="@style/Theme.AppCompat.NoActionBar.Base">
-        </activity>
+            android:name=".capture.CaptureActivity"
+            android:screenOrientation="landscape"
+            android:theme="@style/Theme.AppCompat.NoActionBar.Base"/>
     </application>
 
 </manifest>

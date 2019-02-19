@@ -3,6 +3,8 @@ package io.roadzen.rzcameraandroid.util
 import android.content.Context
 import android.content.res.Resources
 import android.os.Environment
+import android.view.Surface
+import android.view.WindowManager
 import androidx.annotation.Px
 import androidx.appcompat.app.AlertDialog
 
@@ -33,5 +35,22 @@ val Resources.navBarHeight: Int @Px get() {
     return when {
         id > 0 -> getDimensionPixelSize(id)
         else -> 0
+    }
+}
+
+enum class Orientation {
+    LANDSCAPE, LANDSCAPE_REVERSE, PORTRAIT, PORTRAIT_REVERSE
+}
+
+fun getRotation(context: Context): Orientation {
+    val display = (context.getSystemService(Context.WINDOW_SERVICE) as WindowManager).defaultDisplay
+    val rotation = display.rotation
+    return when(rotation){
+        Surface.ROTATION_90 -> Orientation.LANDSCAPE
+        Surface.ROTATION_270 -> Orientation.LANDSCAPE_REVERSE
+        Surface.ROTATION_180 -> Orientation.PORTRAIT_REVERSE
+        Surface.ROTATION_0 -> Orientation.PORTRAIT
+        else ->
+            Orientation.PORTRAIT
     }
 }
