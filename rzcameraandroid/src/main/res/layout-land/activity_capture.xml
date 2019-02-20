@@ -10,23 +10,13 @@
 
     <com.otaliastudios.cameraview.CameraView
         android:id="@+id/cameraView"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
         android:keepScreenOn="true"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent" />
-
-    <ImageButton
-        android:id="@+id/fullscreenButton"
-        android:layout_width="40dp"
-        android:layout_height="40dp"
-        android:layout_margin="16dp"
-        android:background="@android:color/transparent"
-        android:src="@drawable/ic_fullscreen_exit"
-        app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintStart_toStartOf="parent" />
 
     <ImageButton
         android:id="@+id/flashButton"
@@ -39,7 +29,7 @@
         app:layout_constraintStart_toStartOf="parent" />
 
     <androidx.constraintlayout.widget.ConstraintLayout
-        android:id="@+id/bottomControlsLayout"
+        android:id="@+id/controlsLayout"
         android:layout_width="wrap_content"
         android:layout_height="match_parent"
         app:layout_constraintEnd_toEndOf="parent"
@@ -96,7 +86,7 @@
         android:src="@drawable/front_image_4w"
         android:visibility="gone"
         app:layout_constraintBottom_toTopOf="@+id/overlayLabel"
-        app:layout_constraintEnd_toStartOf="@+id/bottomControlsLayout"
+        app:layout_constraintEnd_toStartOf="@+id/controlsLayout"
         app:layout_constraintStart_toEndOf="@+id/flashButton"
         app:layout_constraintTop_toTopOf="parent" />
 

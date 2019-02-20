@@ -1,18 +1,16 @@
 package io.roadzen.rzcameraandroid.imagepreview
 
-import android.util.Log
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
+import io.roadzen.rzcameraandroid.RzCamera.Companion.rzContext
 import io.roadzen.rzcameraandroid.base.BaseViewModel
-import io.roadzen.rzcameraandroid.util.ImageCache
-import io.roadzen.rzcameraandroid.util.LOG_TAG
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import java.io.File
 
 class ImagePreviewViewModel : BaseViewModel() {
 
-    private var currentImageUri: String = ImageCache.capturedImageUriList[0]
+    private var currentImageUri: String? = rzContext.imageCache.capturedImageUriList[0]
 
     private val captureViewStateLD = MutableLiveData<ImagePreviewViewState>()
     private val captureViewEffectLD = MutableLiveData<ImagePreviewViewEffect>()
@@ -27,16 +25,31 @@ class ImagePreviewViewModel : BaseViewModel() {
             captureViewStateLD.value = value
         }
 
+    private val closeScreenCallback = {
+        closeScreen()
+    }
+
+    init {
+        rzContext.endCameraFlow.add(closeScreenCallback)
+    }
+
+    override fun onCleared() {
+        rzContext.endCameraFlow.remove(closeScreenCallback)
+        super.onCleared()
+    }
+
     fun onEvent(captureEvent: ImagePreviewEvent) {
         when (captureEvent) {
             is ImagePreviewEvent.ScreenLoadEvent -> onScreenLoad()
             is ImagePreviewEvent.ImageTappedEvent -> imageTapped(captureEvent.uri)
             is ImagePreviewEvent.DeleteCurrentImage -> deleteCurrentImage()
+            is ImagePreviewEvent.AddImageEvent -> closeScreen()
+            is ImagePreviewEvent.DoneCapturingEvent -> doneCapturingImages()
         }
     }
 
     private fun onScreenLoad() {
-        currentViewState = currentViewState.copy(imageUriList = ImageCache.capturedImageUriList.toList())
+        currentViewState = currentViewState.copy(imageUriList = rzContext.imageCache.capturedImageUriList.toList())
     }
 
     private fun imageTapped(uri: String) {
@@ -45,39 +58,46 @@ class ImagePreviewViewModel : BaseViewModel() {
     }
 
     private fun deleteCurrentImage() {
-        val currentImageIndex = ImageCache.capturedImageUriList.indexOf(currentImageUri)
-        Log.d(LOG_TAG, "index of to be deleted: $currentImageIndex\nUri to be deleted: $currentImageUri")
-        ImageCache.capturedImageUriList.removeAt(currentImageIndex)
+        val currentImageIndex = rzContext.imageCache.capturedImageUriList.indexOf(currentImageUri)
+        rzContext.imageCache.capturedImageUriList.removeAt(currentImageIndex)
 
         val fileUriToBeDeleted = currentImageUri
 
-        if (ImageCache.capturedImageUriList.isEmpty()) {
+        if (rzContext.imageCache.capturedImageUriList.isEmpty()) {
             deleteFile(fileUriToBeDeleted)
-            captureViewEffectLD.value = ImagePreviewViewEffect.CloseScreenEffect
+            closeScreen()
             return
         }
 
-        currentImageUri = if (currentImageIndex == ImageCache.capturedImageUriList.size) {
-            ImageCache.capturedImageUriList[currentImageIndex - 1]
+        currentImageUri = if (currentImageIndex == rzContext.imageCache.capturedImageUriList.size) {
+            rzContext.imageCache.capturedImageUriList[currentImageIndex - 1]
         } else {
-            ImageCache.capturedImageUriList[currentImageIndex]
+            rzContext.imageCache.capturedImageUriList[currentImageIndex]
         }
 
         currentViewState = currentViewState.copy(
             imagePreviewUri = currentImageUri,
-            imageUriList = ImageCache.capturedImageUriList.toList(),
+            imageUriList = rzContext.imageCache.capturedImageUriList.toList(),
             isDeleting = true
         )
 
         launch {
             deleteFile(fileUriToBeDeleted)
-            delay(1000L)
+            delay(500L)
             currentViewState = currentViewState.copy(isDeleting = false)
         }
     }
 
-    private fun deleteFile(fileUriToBeDeleted: String) {
+    private fun deleteFile(fileUriToBeDeleted: String?) {
         val file = File(fileUriToBeDeleted)
-        if (file.delete()) Log.d(LOG_TAG, "$fileUriToBeDeleted deleted")
+        file.delete()
+    }
+
+    private fun closeScreen() {
+        captureViewEffectLD.value = ImagePreviewViewEffect.CloseScreenEffect
+    }
+
+    private fun doneCapturingImages() {
+        rzContext.cleanUpAndEnd(isCancel = false)
     }
 }

@@ -1,6 +1,6 @@
 package io.roadzen.rzcameraandroid.util
 
-internal object ImageCache {
+internal class ImageCache {
 
-    internal var capturedImageUriList: MutableList<String> = mutableListOf()
+    var capturedImageUriList: MutableList<String> = mutableListOf()
 }

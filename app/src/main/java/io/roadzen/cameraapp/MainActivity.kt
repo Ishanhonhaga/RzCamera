@@ -1,8 +1,12 @@
 package io.roadzen.cameraapp
 
-import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
-import io.roadzen.rzcameraandroid.RzContext
+import android.util.Log
+import androidx.appcompat.app.AppCompatActivity
+import io.roadzen.rzcameraandroid.ImageCaptureCallback
+import io.roadzen.rzcameraandroid.RzCamera
+import io.roadzen.rzcameraandroid.util.LOG_TAG
+import kotlinx.android.synthetic.main.activity_main.*
 
 class MainActivity : AppCompatActivity() {
 
@@ -10,9 +14,23 @@ class MainActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
 
-        RzContext.with(this).apply {
-            overlayImageResId = R.drawable.front_image_4w
-            overlayLabel = "Front of Car"
-        }.startCameraFlow()
+        text.setOnClickListener { startCamFlow() }
+    }
+
+    private fun startCamFlow() {
+        RzCamera.with(this).apply {
+            setOverlayImageResId( R.drawable.front_image_4w)
+            setOverlayLabel("Front of Car")
+            setImageCaptureCallback(object : ImageCaptureCallback {
+                override fun onImagesCaptured(imageUriList: List<String>) {
+                    Log.d(LOG_TAG, "List of Images: $imageUriList")
+                }
+
+                override fun onCancelled() {
+                    Log.d(LOG_TAG, "Camera Cancelled")
+                    startCamFlow()
+                }
+            })
+        }.start()
     }
 }

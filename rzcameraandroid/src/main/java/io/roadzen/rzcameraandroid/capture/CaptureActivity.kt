@@ -5,7 +5,6 @@ import android.os.Bundle
 import android.os.Environment
 import android.util.Log
 import android.view.View
-import android.view.ViewGroup
 import android.widget.ImageButton
 import android.widget.ImageView
 import androidx.appcompat.app.AppCompatActivity
@@ -24,6 +23,8 @@ internal class CaptureActivity : AppCompatActivity(), FileDirectoryProvider {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_capture)
 
+        CameraLogger.setLogLevel(CameraLogger.LEVEL_VERBOSE)
+
         viewModel.captureViewEffect.observe(this, Observer { handleViewEffect(it) })
         viewModel.captureViewState.observe(this, Observer { render(it) })
 
@@ -33,6 +34,10 @@ internal class CaptureActivity : AppCompatActivity(), FileDirectoryProvider {
     override fun onStart() {
         super.onStart()
         viewModel.onEvent(CaptureEvent.ScreenLoadEvent)
+    }
+
+    override fun onBackPressed() {
+        viewModel.onEvent(CaptureEvent.ExitEvent)
     }
 
     private fun setUpViews() {
@@ -57,7 +62,6 @@ internal class CaptureActivity : AppCompatActivity(), FileDirectoryProvider {
             }
         })
 
-        fullscreenButton?.setOnClickListener { viewModel.onEvent(CaptureEvent.ChangeAspectRatioEvent) }
         flashButton?.setOnClickListener { viewModel.onEvent(CaptureEvent.ToggleFlashEvent) }
         previewImage?.setOnClickListener { viewModel.onEvent(CaptureEvent.NavigateToPreviewEvent) }
         overlayImage?.setOnClickListener { viewModel.onEvent(CaptureEvent.EnlargeMinimiseOverlayEvent) }
@@ -109,6 +113,8 @@ internal class CaptureActivity : AppCompatActivity(), FileDirectoryProvider {
         if (viewState.capturedImages.isNotEmpty()) {
             previewImage?.visibility = View.VISIBLE
             GlideApp.with(this).load(viewState.capturedImages[0]).into(previewImage as ImageButton)
+        } else {
+            previewImage?.visibility = View.GONE
         }
 
         // ENLARGE OVERLAY
@@ -126,31 +132,13 @@ internal class CaptureActivity : AppCompatActivity(), FileDirectoryProvider {
     private fun handleViewEffect(viewEffect: CaptureViewEffect) {
         when (viewEffect) {
             is CaptureViewEffect.MakeImmersiveEffect -> hideSystemUI()
-            is CaptureViewEffect.ExpandCameraPreviewEffect -> expandPreview(viewEffect.expand)
             is CaptureViewEffect.NavigateToImagePreviewEffect -> navigateToImagePreview()
+            is CaptureViewEffect.CloseScreenEffect -> finish()
         }
     }
 
     private fun navigateToImagePreview() {
         startActivity(Intent(this, ImagePreviewActivity::class.java))
-    }
-
-    private fun expandPreview(expand: Boolean) {
-        if (expand) {
-            hideSystemUI()
-            val params = cameraView.layoutParams
-            params.height = ViewGroup.LayoutParams.MATCH_PARENT
-            params.width = ViewGroup.LayoutParams.MATCH_PARENT
-            cameraView.layoutParams = params
-            fullscreenButton?.setImageResource(R.drawable.ic_fullscreen_exit)
-        } else {
-            showSystemUI()
-            val params = cameraView.layoutParams
-            params.height = ViewGroup.LayoutParams.WRAP_CONTENT
-            params.width = ViewGroup.LayoutParams.WRAP_CONTENT
-            cameraView.layoutParams = params
-            fullscreenButton?.setImageResource(R.drawable.ic_fullscreen)
-        }
     }
 
     private fun hideSystemUI() {

@@ -23,12 +23,15 @@ class ImagePreviewActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_image_preview)
 
+        hideSystemUI()
         setupList()
 
         viewModel.captureViewState.observe(this, Observer { render(it) })
         viewModel.captureViewEffect.observe(this, Observer { handleEffect(it) })
 
+        addImageButton?.setOnClickListener { viewModel.onEvent(ImagePreviewEvent.AddImageEvent) }
         deleteButton?.setOnClickListener { viewModel.onEvent(ImagePreviewEvent.DeleteCurrentImage) }
+        doneButton?.setOnClickListener { viewModel.onEvent(ImagePreviewEvent.DoneCapturingEvent) }
     }
 
     override fun onStart() {
@@ -70,5 +73,20 @@ class ImagePreviewActivity : AppCompatActivity() {
         previewRecyclerView?.layoutManager = linearLayoutManager
         listAdapter = ImageAdapter { uriStr -> viewModel.onEvent(ImagePreviewEvent.ImageTappedEvent(uriStr)) }
         previewRecyclerView?.adapter = listAdapter
+    }
+
+    private fun hideSystemUI() {
+        // Enables regular immersive mode.
+        // For "lean back" mode, remove SYSTEM_UI_FLAG_IMMERSIVE.
+        // Or for "sticky immersive," replace it with SYSTEM_UI_FLAG_IMMERSIVE_STICKY
+        window.decorView.systemUiVisibility = (View.SYSTEM_UI_FLAG_IMMERSIVE
+                // Set the content to appear under the system bars so that the
+                // content doesn't resize when the system bars hide and show.
+                or View.SYSTEM_UI_FLAG_LAYOUT_STABLE
+                or View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION
+                or View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN
+                // Hide the nav bar and status bar
+                or View.SYSTEM_UI_FLAG_FULLSCREEN
+                or View.SYSTEM_UI_FLAG_HIDE_NAVIGATION)
     }
 }
