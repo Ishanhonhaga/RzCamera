@@ -8,7 +8,7 @@ import android.view.WindowManager
 import androidx.annotation.Px
 import androidx.appcompat.app.AlertDialog
 
-const val LOG_TAG = "RZCameraAndroid"
+const val LOG_TAG = "SPECIALTY"
 const val ERROR_SAVE_FILE = "Unable to save image to file. Please try again or contact support."
 const val ERROR_CAMERA = "Unable to use your device camera. Please try again."
 
@@ -53,4 +53,14 @@ fun getRotation(context: Context): Orientation {
         else ->
             Orientation.PORTRAIT
     }
+}
+
+enum class Resolution(val width: Int, val height: Int) {
+    R720x480(720, 480),
+    R1280x720(1280, 720),
+    R1920x1080(1920, 1080),
+    R2560x1440(2560, 1440),
+    R3840x2160(3840, 2160),
+    MAX(0, 0),
+    MIN(640, 480)
 }

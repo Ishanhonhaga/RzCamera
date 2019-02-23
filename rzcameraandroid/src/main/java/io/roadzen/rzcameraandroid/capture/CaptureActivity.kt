@@ -11,9 +11,11 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.lifecycle.Observer
 import com.otaliastudios.cameraview.*
 import io.roadzen.rzcameraandroid.R
+import io.roadzen.rzcameraandroid.RzCamera.Companion.rzContext
 import io.roadzen.rzcameraandroid.imagepreview.ImagePreviewActivity
 import io.roadzen.rzcameraandroid.util.*
 import kotlinx.android.synthetic.main.activity_capture.*
+
 
 internal class CaptureActivity : AppCompatActivity(), FileDirectoryProvider {
 
@@ -31,8 +33,8 @@ internal class CaptureActivity : AppCompatActivity(), FileDirectoryProvider {
         setUpViews()
     }
 
-    override fun onStart() {
-        super.onStart()
+    override fun onResume() {
+        super.onResume()
         viewModel.onEvent(CaptureEvent.ScreenLoadEvent)
     }
 
@@ -42,7 +44,7 @@ internal class CaptureActivity : AppCompatActivity(), FileDirectoryProvider {
 
     private fun setUpViews() {
         window.decorView.setOnSystemUiVisibilityChangeListener { visibility ->
-            if (visibility and View.SYSTEM_UI_FLAG_FULLSCREEN == 0) {
+            if (visibility and View.SYSTEM_UI_FLAG_FULLSCREEN == 0 && hasWindowFocus()) {
                 viewModel.onEvent(CaptureEvent.SystemUiVisibleEvent)
             }
         }
@@ -62,11 +64,31 @@ internal class CaptureActivity : AppCompatActivity(), FileDirectoryProvider {
             }
         })
 
+        setCameraResolution()
+
         flashButton?.setOnClickListener { viewModel.onEvent(CaptureEvent.ToggleFlashEvent) }
         previewImage?.setOnClickListener { viewModel.onEvent(CaptureEvent.NavigateToPreviewEvent) }
         overlayImage?.setOnClickListener { viewModel.onEvent(CaptureEvent.EnlargeMinimiseOverlayEvent) }
         enlargedOverlayImage?.setOnClickListener { viewModel.onEvent(CaptureEvent.EnlargeMinimiseOverlayEvent) }
         captureButton?.setOnClickListener { cameraView.takePicture() }
+    }
+
+    private fun setCameraResolution() {
+        val width = SizeSelectors.minWidth(rzContext.resolution.width)
+        val height = SizeSelectors.minHeight(rzContext.resolution.height)
+        val dimensions = SizeSelectors.and(width, height) // Matches sizes bigger than 1000x2000.
+        val ratio = SizeSelectors.aspectRatio(AspectRatio.of(16, 9), 0f) // Matches 1:1 sizes.
+
+        val result = if (rzContext.resolution == Resolution.MAX) {
+            SizeSelectors.or(SizeSelectors.biggest())
+        } else {
+            SizeSelectors.or(
+                SizeSelectors.and(ratio, dimensions), // Try to match both constraints
+                ratio, // If none is found, at least try to match the aspect ratio
+                SizeSelectors.biggest() // If none is found, take the biggest
+            )
+        }
+        cameraView.setPictureSize(result)
     }
 
     private fun render(viewState: CaptureViewState) {
@@ -133,7 +155,7 @@ internal class CaptureActivity : AppCompatActivity(), FileDirectoryProvider {
         when (viewEffect) {
             is CaptureViewEffect.MakeImmersiveEffect -> hideSystemUI()
             is CaptureViewEffect.NavigateToImagePreviewEffect -> navigateToImagePreview()
-            is CaptureViewEffect.CloseScreenEffect -> finish()
+            is CaptureViewEffect.CloseScreenEffect -> { finish() }
         }
     }
 

@@ -1,5 +1,6 @@
 package io.roadzen.rzcameraandroid.capture
 
+import android.util.Log
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import com.otaliastudios.cameraview.PictureResult
@@ -54,7 +55,7 @@ internal class CaptureViewModel(
             is CaptureEvent.ToggleFlashEvent -> toggleFlash()
             is CaptureEvent.EnlargeMinimiseOverlayEvent -> enlargeMinimiseOverlay()
             is CaptureEvent.NavigateToPreviewEvent -> navigateToPreview()
-            is CaptureEvent.SystemUiVisibleEvent -> hideSystemUI()
+            is CaptureEvent.SystemUiVisibleEvent -> hideSystemUIWithDelay()
             is CaptureEvent.CameraErrorEvent -> cameraError()
             is CaptureEvent.ExitEvent -> cancelAndClose()
         }
@@ -65,11 +66,15 @@ internal class CaptureViewModel(
         currentViewState = currentViewState.copy(capturedImages = rzContext.imageCache.capturedImageUriList.toList())
     }
 
+    private fun hideSystemUI() {
+        captureViewEffectLD.value = CaptureViewEffect.MakeImmersiveEffect
+    }
+
     private fun cameraError() {
         currentViewState = currentViewState.copy(error = ERROR_CAMERA)
     }
 
-    private fun hideSystemUI() {
+    private fun hideSystemUIWithDelay() {
         launch {
             delay(1000L)
             captureViewEffectLD.value = CaptureViewEffect.MakeImmersiveEffect
@@ -95,7 +100,8 @@ internal class CaptureViewModel(
     }
 
     private fun imageCaptured(pictureResult: PictureResult) {
-        val fileName = "${rzContext.fileName}_${Date().time}_${imageCounter.getAndIncrement()}.${rzContext.imageFileExtension}"
+        val fileName = "${rzContext.rzCameraInstanceDetails?.fileName}_${Date().time}_" +
+                "${imageCounter.getAndIncrement()}.${rzContext.rzCameraInstanceDetails?.fileExtension}"
 
         val file = if (!rzContext.useInternalStorage && isExternalStorageWritable()) {
             val externalDirectory = fileDirectoryProvider.getPublicDirectory()
@@ -124,6 +130,7 @@ internal class CaptureViewModel(
     }
 
     private fun closeScreen() {
+        Log.d("SPECIALTY", "closeScreen() called")
         captureViewEffectLD.value = CaptureViewEffect.CloseScreenEffect
     }
 

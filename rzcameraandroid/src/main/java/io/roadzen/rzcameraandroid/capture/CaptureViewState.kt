@@ -35,11 +35,11 @@ sealed class CaptureEvent {
 fun initCaptureViewState(): CaptureViewState {
     return CaptureViewState(
         flashMode = rzContext.defaultFlashMode,
-        overlayImageUri = rzContext.overlayImageUri,
-        overlayImageResId = rzContext.overlayImageResId,
+        overlayImageUri = rzContext.rzCameraInstanceDetails?.overlayImageUri,
+        overlayImageResId = rzContext.rzCameraInstanceDetails?.overlayImageResId,
         capturedImages = rzContext.imageCache.capturedImageUriList.toList(),
         overlayEnlarged = false,
-        overlayLabel = rzContext.overlayLabel,
+        overlayLabel = rzContext.rzCameraInstanceDetails?.overlayLabel,
         error = null
     )
 }

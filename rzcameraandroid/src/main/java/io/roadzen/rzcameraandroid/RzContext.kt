@@ -2,66 +2,49 @@ package io.roadzen.rzcameraandroid
 
 import android.content.Context
 import android.content.Intent
+import android.util.Log
 import io.roadzen.rzcameraandroid.capture.CaptureActivity
 import io.roadzen.rzcameraandroid.capture.FlashMode
+import io.roadzen.rzcameraandroid.model.RzCameraInstanceDetails
 import io.roadzen.rzcameraandroid.util.ImageCache
+import io.roadzen.rzcameraandroid.util.Resolution
 import java.lang.ref.WeakReference
 
-internal class RzContext(context: Context) {
+internal data class RzContext(
+    val context: WeakReference<Context>,
+    val imageCache: ImageCache = ImageCache(),
+    val endCameraFlow: MutableList<NoArgCallback> = mutableListOf(),
+    val rzCameraInstanceDetails: RzCameraInstanceDetails?
+) {
 
-    private var context: WeakReference<Context> = WeakReference(context)
+    var resolution: Resolution = Resolution.MAX
 
-    var callback: ImageCaptureCallback? = null
-    var fileName: String = "mediaFile"
-    var imageFileExtension: String = "jpg"
-
-    /**
-     * File extension for all the video files. Default is "mp4".
-     * Please note: The file name will be structured as -
-     * "${fileName}_${current date time in millis}_${imageNumber}.${videoFileExtension}"
-     */
-    var videoFileExtension: String = "mp4"
+//    /**
+//     * File extension for all the video files. Default is "mp4".
+//     * Please note: The file name will be structured as -
+//     * "${fileName}_${current date time in millis}_${imageNumber}.${videoFileExtension}"
+//     */
+//    var videoFileExtension: String = "mp4"
 
     var useInternalStorage = false
     var defaultFlashMode = FlashMode.AUTO
-    var overlayImageUri: String? = null
-        set(value) {
-            field = value
-            if (value != null) overlayImageResId = null
-        }
-    var overlayImageResId: Int? = null
-        set(value) {
-            field = value
-            if (value != null) overlayImageUri = null
-        }
-    var overlayLabel: String? = null
-    var prevImageUriList: List<String>? = null
 
-    fun with(context: Context): RzContext {
-        this.context = WeakReference(context)
-        return this
-    }
-
-    /**
-     * Start ConvenientCamera with assigned configuration
-     */
     fun startCameraFlow() {
-        prevImageUriList?.let { imageCache.capturedImageUriList.addAll(it) }
-        context.get()?.startActivity(Intent(context.get(), CaptureActivity::class.java))
+        rzCameraInstanceDetails?.prevCapturedImageUris?.let { imageCache.capturedImageUriList.addAll(it) }
+        Log.d("SPECIALTY", "Start activity being called for ${rzCameraInstanceDetails?.fieldName}")
+
+        val intent = Intent(context.get(), CaptureActivity::class.java)
+        context.get()?.startActivity(intent)
     }
 
     fun cleanUpAndEnd(isCancel: Boolean) {
-        RzCamera.stop()
         if (isCancel) {
-            callback?.onCancelled()
+            RzCamera.stop(isCancel = true, imageUriList = null)
         } else {
-            callback?.onImagesCaptured(imageCache.capturedImageUriList)
             endCameraFlow.forEach { it() }
+            RzCamera.stop(isCancel = false, imageUriList = imageCache.capturedImageUriList)
         }
     }
-
-    val imageCache: ImageCache = ImageCache()
-    val endCameraFlow: MutableList<NoArgCallback> = mutableListOf()
 }
 
 typealias NoArgCallback = () -> Unit
