@@ -1,6 +1,5 @@
 package io.roadzen.rzcameraandroid.imagepreview
 
-import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -9,7 +8,6 @@ import androidx.recyclerview.widget.ListAdapter
 import androidx.recyclerview.widget.RecyclerView
 import io.roadzen.rzcameraandroid.R
 import io.roadzen.rzcameraandroid.util.GlideApp
-import io.roadzen.rzcameraandroid.util.LOG_TAG
 import kotlinx.android.synthetic.main.list_item_image.view.*
 
 class ImageAdapter(private val clickListener: (String) -> Unit) :

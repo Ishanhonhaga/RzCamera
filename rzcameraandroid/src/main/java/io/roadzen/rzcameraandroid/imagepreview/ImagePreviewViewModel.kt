@@ -45,6 +45,7 @@ class ImagePreviewViewModel : BaseViewModel() {
             is ImagePreviewEvent.DeleteCurrentImage -> deleteCurrentImage()
             is ImagePreviewEvent.AddImageEvent -> closeScreen()
             is ImagePreviewEvent.DoneCapturingEvent -> doneCapturingImages()
+            is ImagePreviewEvent.SystemUiVisibleEvent -> hideSystemUIWithDelay()
         }
     }
 
@@ -99,5 +100,12 @@ class ImagePreviewViewModel : BaseViewModel() {
 
     private fun doneCapturingImages() {
         rzContext.cleanUpAndEnd(isCancel = false)
+    }
+
+    private fun hideSystemUIWithDelay() {
+        launch {
+            delay(1000L)
+            captureViewEffectLD.value = ImagePreviewViewEffect.MakeImmersiveEffect
+        }
     }
 }

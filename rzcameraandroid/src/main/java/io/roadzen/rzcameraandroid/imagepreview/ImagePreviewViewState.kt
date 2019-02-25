@@ -10,7 +10,7 @@ data class ImagePreviewViewState(
 
 fun initImagePreviewViewState(): ImagePreviewViewState {
     return ImagePreviewViewState(
-        imagePreviewUri = rzContext.imageCache.capturedImageUriList.get(0),
+        imagePreviewUri = rzContext.imageCache.capturedImageUriList[0],
         imageUriList = rzContext.imageCache.capturedImageUriList,
         isDeleting = false
     )
@@ -22,8 +22,10 @@ sealed class ImagePreviewEvent {
     object DeleteCurrentImage : ImagePreviewEvent()
     object AddImageEvent : ImagePreviewEvent()
     object DoneCapturingEvent : ImagePreviewEvent()
+    object SystemUiVisibleEvent : ImagePreviewEvent()
 }
 
 sealed class ImagePreviewViewEffect {
     object CloseScreenEffect : ImagePreviewViewEffect()
+    object MakeImmersiveEffect : ImagePreviewViewEffect()
 }

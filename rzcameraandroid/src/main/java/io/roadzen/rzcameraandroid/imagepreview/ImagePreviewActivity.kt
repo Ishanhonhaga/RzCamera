@@ -32,6 +32,12 @@ class ImagePreviewActivity : AppCompatActivity() {
         addImageButton?.setOnClickListener { viewModel.onEvent(ImagePreviewEvent.AddImageEvent) }
         deleteButton?.setOnClickListener { viewModel.onEvent(ImagePreviewEvent.DeleteCurrentImage) }
         doneButton?.setOnClickListener { viewModel.onEvent(ImagePreviewEvent.DoneCapturingEvent) }
+
+        window.decorView.setOnSystemUiVisibilityChangeListener { visibility ->
+            if (visibility and View.SYSTEM_UI_FLAG_FULLSCREEN == 0 && hasWindowFocus()) {
+                viewModel.onEvent(ImagePreviewEvent.SystemUiVisibleEvent)
+            }
+        }
     }
 
     override fun onStart() {
@@ -44,6 +50,7 @@ class ImagePreviewActivity : AppCompatActivity() {
 
         when (viewEffect) {
             is ImagePreviewViewEffect.CloseScreenEffect -> finish()
+            is ImagePreviewViewEffect.MakeImmersiveEffect -> hideSystemUI()
         }
     }
 
