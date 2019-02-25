@@ -1,6 +1,6 @@
 package io.roadzen.rzcameraandroid.imagepreview
 
-import io.roadzen.rzcameraandroid.RzCamera.Companion.rzContext
+import io.roadzen.rzcameraandroid.camera.RzCamera
 
 data class ImagePreviewViewState(
     val imagePreviewUri: String?,
@@ -10,8 +10,8 @@ data class ImagePreviewViewState(
 
 fun initImagePreviewViewState(): ImagePreviewViewState {
     return ImagePreviewViewState(
-        imagePreviewUri = rzContext.imageCache.capturedImageUriList[0],
-        imageUriList = rzContext.imageCache.capturedImageUriList,
+        imagePreviewUri = RzCamera.imageCache.capturedImageUriList[0],
+        imageUriList = RzCamera.imageCache.capturedImageUriList,
         isDeleting = false
     )
 }

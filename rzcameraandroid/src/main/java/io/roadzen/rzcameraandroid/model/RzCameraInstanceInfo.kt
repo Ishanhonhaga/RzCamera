@@ -3,7 +3,7 @@ package io.roadzen.rzcameraandroid.model
 /**
  * Holds the details for one Camera Instance which can include one or more images.
  */
-data class RzCameraInstanceDetails(
+data class RzCameraInstanceInfo(
 
     /**
      * Image resource ID for image to be overlayed on the camera preview.

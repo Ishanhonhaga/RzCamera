@@ -1,12 +1,11 @@
 package io.roadzen.rzcameraandroid.capture
 
-import android.util.Log
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import com.otaliastudios.cameraview.PictureResult
-import io.roadzen.rzcameraandroid.RzCamera.Companion.rzContext
 import io.roadzen.rzcameraandroid.base.BaseViewModel
-import io.roadzen.rzcameraandroid.util.ERROR_CAMERA
+import io.roadzen.rzcameraandroid.camera.FlowEnd
+import io.roadzen.rzcameraandroid.camera.RzCamera
 import io.roadzen.rzcameraandroid.util.ERROR_SAVE_FILE
 import io.roadzen.rzcameraandroid.util.FileDirectoryProvider
 import io.roadzen.rzcameraandroid.util.isExternalStorageWritable
@@ -40,11 +39,11 @@ internal class CaptureViewModel(
     }
 
     init {
-        rzContext.endCameraFlow.add(closeScreenCallback)
+        RzCamera.endCameraFlow.add(closeScreenCallback)
     }
 
     override fun onCleared() {
-        rzContext.endCameraFlow.remove(closeScreenCallback)
+        RzCamera.endCameraFlow.remove(closeScreenCallback)
         super.onCleared()
     }
 
@@ -56,22 +55,23 @@ internal class CaptureViewModel(
             is CaptureEvent.EnlargeMinimiseOverlayEvent -> enlargeMinimiseOverlay()
             is CaptureEvent.NavigateToPreviewEvent -> navigateToPreview()
             is CaptureEvent.SystemUiVisibleEvent -> hideSystemUIWithDelay()
-            is CaptureEvent.CameraErrorEvent -> cameraError()
+            is CaptureEvent.CameraErrorEvent -> cameraError(captureEvent.errorMsg)
             is CaptureEvent.ExitEvent -> cancelAndClose()
+            is CaptureEvent.BackPressedEvent -> backPressed()
         }
     }
 
     private fun screenLoad() {
         hideSystemUI()
-        currentViewState = currentViewState.copy(capturedImages = rzContext.imageCache.capturedImageUriList.toList())
+        currentViewState = currentViewState.copy(capturedImages = RzCamera.imageCache.capturedImageUriList.toList())
     }
 
     private fun hideSystemUI() {
         captureViewEffectLD.value = CaptureViewEffect.MakeImmersiveEffect
     }
 
-    private fun cameraError() {
-        currentViewState = currentViewState.copy(error = ERROR_CAMERA)
+    private fun cameraError(errorMsg: String) {
+        RzCamera.stop(FlowEnd.ERROR, errorMsg)
     }
 
     private fun hideSystemUIWithDelay() {
@@ -100,10 +100,10 @@ internal class CaptureViewModel(
     }
 
     private fun imageCaptured(pictureResult: PictureResult) {
-        val fileName = "${rzContext.rzCameraInstanceDetails?.fileName}_${Date().time}_" +
-                "${imageCounter.getAndIncrement()}.${rzContext.rzCameraInstanceDetails?.fileExtension}"
+        val fileName = "${RzCamera.cameraInstanceInfo?.fileName}_${Date().time}_" +
+                "${imageCounter.getAndIncrement()}.${RzCamera.cameraInstanceInfo?.fileExtension}"
 
-        val file = if (!rzContext.useInternalStorage && isExternalStorageWritable()) {
+        val file = if (!RzCamera.useInternalStorage && isExternalStorageWritable()) {
             val externalDirectory = fileDirectoryProvider.getPublicDirectory()
             File(externalDirectory, fileName)
 
@@ -115,10 +115,10 @@ internal class CaptureViewModel(
             if (savedFile != null) {
                 val uriPath = savedFile.toURI()?.path!!
 
-                rzContext.imageCache.capturedImageUriList.add(0, uriPath)
+                RzCamera.imageCache.capturedImageUriList.add(0, uriPath)
 
-                if (rzContext.imageCache.capturedImageUriList.size > 1) {
-                    currentViewState = currentViewState.copy(capturedImages = rzContext.imageCache.capturedImageUriList.toList())
+                if (RzCamera.imageCache.capturedImageUriList.size > 1) {
+                    currentViewState = currentViewState.copy(capturedImages = RzCamera.imageCache.capturedImageUriList.toList())
                 } else {
                     captureViewEffectLD.value = CaptureViewEffect.NavigateToImagePreviewEffect
                 }
@@ -130,12 +130,14 @@ internal class CaptureViewModel(
     }
 
     private fun closeScreen() {
-        Log.d("SPECIALTY", "closeScreen() called")
         captureViewEffectLD.value = CaptureViewEffect.CloseScreenEffect
     }
 
+    private fun backPressed() {
+        captureViewEffectLD.value = CaptureViewEffect.ConfirmExitEffect("Are you sure you want to cancel camera?")
+    }
+
     private fun cancelAndClose() {
-        rzContext.cleanUpAndEnd(isCancel = true)
-        captureViewEffectLD.value = CaptureViewEffect.CloseScreenEffect
+        RzCamera.stop(FlowEnd.CANCEL)
     }
 }

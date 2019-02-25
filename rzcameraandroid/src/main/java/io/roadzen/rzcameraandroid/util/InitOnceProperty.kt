@@ -12,6 +12,7 @@ class InitOnceProperty<T>(
 
     private var value: Any? = EMPTY
 
+    @Suppress("UNCHECKED_CAST")
     override fun getValue(thisRef: Any, property: KProperty<*>): T {
         return if (value == EMPTY) {
             defaultValue

@@ -1,7 +1,7 @@
 package io.roadzen.rzcameraandroid.capture
 
 import com.otaliastudios.cameraview.PictureResult
-import io.roadzen.rzcameraandroid.RzCamera.Companion.rzContext
+import io.roadzen.rzcameraandroid.camera.RzCamera
 
 enum class FlashMode { ON, OFF, AUTO }
 
@@ -19,6 +19,7 @@ sealed class CaptureViewEffect {
     object MakeImmersiveEffect : CaptureViewEffect()
     object NavigateToImagePreviewEffect : CaptureViewEffect()
     object CloseScreenEffect : CaptureViewEffect()
+    class ConfirmExitEffect(val msg: String) : CaptureViewEffect()
 }
 
 sealed class CaptureEvent {
@@ -28,18 +29,19 @@ sealed class CaptureEvent {
     object EnlargeMinimiseOverlayEvent : CaptureEvent()
     object NavigateToPreviewEvent : CaptureEvent()
     object SystemUiVisibleEvent : CaptureEvent()
-    object CameraErrorEvent : CaptureEvent()
+    class CameraErrorEvent(val errorMsg: String) : CaptureEvent()
     object ExitEvent : CaptureEvent()
+    object BackPressedEvent : CaptureEvent()
 }
 
 fun initCaptureViewState(): CaptureViewState {
     return CaptureViewState(
-        flashMode = rzContext.defaultFlashMode,
-        overlayImageUri = rzContext.rzCameraInstanceDetails?.overlayImageUri,
-        overlayImageResId = rzContext.rzCameraInstanceDetails?.overlayImageResId,
-        capturedImages = rzContext.imageCache.capturedImageUriList.toList(),
+        flashMode = RzCamera.defaultFlashMode,
+        overlayImageUri = RzCamera.cameraInstanceInfo?.overlayImageUri,
+        overlayImageResId = RzCamera.cameraInstanceInfo?.overlayImageResId,
+        capturedImages = RzCamera.imageCache.capturedImageUriList.toList(),
         overlayEnlarged = false,
-        overlayLabel = rzContext.rzCameraInstanceDetails?.overlayLabel,
+        overlayLabel = RzCamera.cameraInstanceInfo?.overlayLabel,
         error = null
     )
 }

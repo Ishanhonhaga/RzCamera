@@ -11,7 +11,7 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.lifecycle.Observer
 import com.otaliastudios.cameraview.*
 import io.roadzen.rzcameraandroid.R
-import io.roadzen.rzcameraandroid.RzCamera.Companion.rzContext
+import io.roadzen.rzcameraandroid.camera.RzCamera
 import io.roadzen.rzcameraandroid.imagepreview.ImagePreviewActivity
 import io.roadzen.rzcameraandroid.util.*
 import kotlinx.android.synthetic.main.activity_capture.*
@@ -39,7 +39,7 @@ internal class CaptureActivity : AppCompatActivity(), FileDirectoryProvider {
     }
 
     override fun onBackPressed() {
-        viewModel.onEvent(CaptureEvent.ExitEvent)
+        viewModel.onEvent(CaptureEvent.BackPressedEvent)
     }
 
     private fun setUpViews() {
@@ -60,7 +60,7 @@ internal class CaptureActivity : AppCompatActivity(), FileDirectoryProvider {
 
             override fun onCameraError(exception: CameraException) {
                 Log.e(LOG_TAG, exception.localizedMessage)
-                viewModel.onEvent(CaptureEvent.CameraErrorEvent)
+                viewModel.onEvent(CaptureEvent.CameraErrorEvent(exception.localizedMessage))
             }
         })
 
@@ -74,12 +74,12 @@ internal class CaptureActivity : AppCompatActivity(), FileDirectoryProvider {
     }
 
     private fun setCameraResolution() {
-        val width = SizeSelectors.minWidth(rzContext.resolution.width)
-        val height = SizeSelectors.minHeight(rzContext.resolution.height)
+        val width = SizeSelectors.minWidth(RzCamera.resolution.width)
+        val height = SizeSelectors.minHeight(RzCamera.resolution.height)
         val dimensions = SizeSelectors.and(width, height) // Matches sizes bigger than 1000x2000.
         val ratio = SizeSelectors.aspectRatio(AspectRatio.of(16, 9), 0f) // Matches 1:1 sizes.
 
-        val result = if (rzContext.resolution == Resolution.MAX) {
+        val result = if (RzCamera.resolution == Resolution.MAX) {
             SizeSelectors.or(SizeSelectors.biggest())
         } else {
             SizeSelectors.or(
@@ -156,6 +156,13 @@ internal class CaptureActivity : AppCompatActivity(), FileDirectoryProvider {
             is CaptureViewEffect.MakeImmersiveEffect -> hideSystemUI()
             is CaptureViewEffect.NavigateToImagePreviewEffect -> navigateToImagePreview()
             is CaptureViewEffect.CloseScreenEffect -> { finish() }
+            is CaptureViewEffect.ConfirmExitEffect -> showConfirmExitDialog(viewEffect.msg)
+        }
+    }
+
+    private fun showConfirmExitDialog(msg: String) {
+        showYesNoDialog(msg, this) {
+            viewModel.onEvent(CaptureEvent.ExitEvent)
         }
     }
 

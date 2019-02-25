@@ -2,15 +2,16 @@ package io.roadzen.rzcameraandroid.imagepreview
 
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
-import io.roadzen.rzcameraandroid.RzCamera.Companion.rzContext
 import io.roadzen.rzcameraandroid.base.BaseViewModel
+import io.roadzen.rzcameraandroid.camera.FlowEnd
+import io.roadzen.rzcameraandroid.camera.RzCamera
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import java.io.File
 
 class ImagePreviewViewModel : BaseViewModel() {
 
-    private var currentImageUri: String? = rzContext.imageCache.capturedImageUriList[0]
+    private var currentImageUri: String? = RzCamera.imageCache.capturedImageUriList[0]
 
     private val captureViewStateLD = MutableLiveData<ImagePreviewViewState>()
     private val captureViewEffectLD = MutableLiveData<ImagePreviewViewEffect>()
@@ -30,11 +31,11 @@ class ImagePreviewViewModel : BaseViewModel() {
     }
 
     init {
-        rzContext.endCameraFlow.add(closeScreenCallback)
+        RzCamera.endCameraFlow.add(closeScreenCallback)
     }
 
     override fun onCleared() {
-        rzContext.endCameraFlow.remove(closeScreenCallback)
+        RzCamera.endCameraFlow.remove(closeScreenCallback)
         super.onCleared()
     }
 
@@ -50,7 +51,7 @@ class ImagePreviewViewModel : BaseViewModel() {
     }
 
     private fun onScreenLoad() {
-        currentViewState = currentViewState.copy(imageUriList = rzContext.imageCache.capturedImageUriList.toList())
+        currentViewState = currentViewState.copy(imageUriList = RzCamera.imageCache.capturedImageUriList.toList())
     }
 
     private fun imageTapped(uri: String) {
@@ -59,26 +60,26 @@ class ImagePreviewViewModel : BaseViewModel() {
     }
 
     private fun deleteCurrentImage() {
-        val currentImageIndex = rzContext.imageCache.capturedImageUriList.indexOf(currentImageUri)
-        rzContext.imageCache.capturedImageUriList.removeAt(currentImageIndex)
+        val currentImageIndex = RzCamera.imageCache.capturedImageUriList.indexOf(currentImageUri)
+        RzCamera.imageCache.capturedImageUriList.removeAt(currentImageIndex)
 
         val fileUriToBeDeleted = currentImageUri
 
-        if (rzContext.imageCache.capturedImageUriList.isEmpty()) {
+        if (RzCamera.imageCache.capturedImageUriList.isEmpty()) {
             deleteFile(fileUriToBeDeleted)
             closeScreen()
             return
         }
 
-        currentImageUri = if (currentImageIndex == rzContext.imageCache.capturedImageUriList.size) {
-            rzContext.imageCache.capturedImageUriList[currentImageIndex - 1]
+        currentImageUri = if (currentImageIndex == RzCamera.imageCache.capturedImageUriList.size) {
+            RzCamera.imageCache.capturedImageUriList[currentImageIndex - 1]
         } else {
-            rzContext.imageCache.capturedImageUriList[currentImageIndex]
+            RzCamera.imageCache.capturedImageUriList[currentImageIndex]
         }
 
         currentViewState = currentViewState.copy(
             imagePreviewUri = currentImageUri,
-            imageUriList = rzContext.imageCache.capturedImageUriList.toList(),
+            imageUriList = RzCamera.imageCache.capturedImageUriList.toList(),
             isDeleting = true
         )
 
@@ -99,7 +100,7 @@ class ImagePreviewViewModel : BaseViewModel() {
     }
 
     private fun doneCapturingImages() {
-        rzContext.cleanUpAndEnd(isCancel = false)
+        RzCamera.stop(FlowEnd.COMPLETE)
     }
 
     private fun hideSystemUIWithDelay() {
