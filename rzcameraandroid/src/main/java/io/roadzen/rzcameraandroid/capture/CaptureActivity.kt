@@ -1,5 +1,6 @@
 package io.roadzen.rzcameraandroid.capture
 
+import android.app.ActivityOptions
 import android.content.Intent
 import android.os.Bundle
 import android.os.Environment
@@ -167,7 +168,8 @@ internal class CaptureActivity : AppCompatActivity(), FileDirectoryProvider {
     }
 
     private fun navigateToImagePreview() {
-        startActivity(Intent(this, ImagePreviewActivity::class.java))
+        startActivity(Intent(this, ImagePreviewActivity::class.java),
+            ActivityOptions.makeSceneTransitionAnimation(this).toBundle())
     }
 
     private fun hideSystemUI() {
